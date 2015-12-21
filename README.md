@@ -32,7 +32,6 @@ connect to the RabbitMQ Management API:
 
 * Username - the username for authentication
 * Password - the password for authentication
-* Realm - the HTTP realm for authentication
 * Host - hostname or IP address of the RabbitMQ server running the RabbitMQ
          Management Plugin
 * Port - the port of the RabbitMQ Management API
@@ -46,6 +45,11 @@ of specific statistics:
 * CollectNodes - enables collection of node statistics
 * CollectQueues - enables collection of queue statistics
 
+An additional configuration option is available:
+
+* HTTPTimeout - Integer value in seconds before timing out when connecting
+                to the RabbitMQ Management API. Defaults to 1 second.
+
 The following is an example Collectd configuration for this plugin:
 
 ```
@@ -57,7 +61,6 @@ The following is an example Collectd configuration for this plugin:
       <Module rabbitmq>
         Username "guest"
         Password "guest"
-        Realm "RabbitMQ Management"
         Host "localhost"
         Port "15672"
         CollectChannels true
@@ -65,6 +68,7 @@ The following is an example Collectd configuration for this plugin:
         CollectExchanges true
         CollectNodes true
         CollectQueues true
+        HTTPTimeout 5
       </Module>
     </Plugin>
 ```

@@ -12,6 +12,7 @@ import metric_info
 # Global constants
 DEFAULT_API_TIMEOUT = 1  # Seconds to wait for the RabbitMQ API to respond
 DEFAULT_METRIC_TYPE = 'gauge'
+DEFAULT_REALM = 'RabbitMQ Management'
 DEFAULT_VHOST_NAME = 'default'
 DIMENSION_NAMES = frozenset(('node', 'name', 'vhost'))
 PLUGIN_NAME = 'rabbitmq'
@@ -19,6 +20,7 @@ PLUGIN_NAME = 'rabbitmq'
 # These are determined by the plugin config settings and are set by config()
 api_endpoints = []
 api_urls = {}
+http_timeout = DEFAULT_API_TIMEOUT
 plugin_config = {}
 
 
@@ -33,7 +35,7 @@ def _api_call(url):
     list: The JSON response
     """
     try:
-        resp = urllib2.urlopen(url, timeout=DEFAULT_API_TIMEOUT)
+        resp = urllib2.urlopen(url, timeout=http_timeout)
     except (urllib2.HTTPError, urllib2.URLError) as e:
         collectd.error("Error making API call (%s) %s" % (e, url))
         return []
@@ -186,8 +188,8 @@ def config(config_values):
     Args:
     config_values (collectd.Config): Object containing config values
     """
-    global plugin_config, api_endpoints
-    desired_keys = ('Username', 'Password', 'Host', 'Port', 'Realm')
+    global plugin_config, api_endpoints, http_timeout
+    desired_keys = ('Username', 'Password', 'Host', 'Port')
     for val in config_values.children:
         if val.key in desired_keys:
             plugin_config[val.key] = val.values[0]
@@ -201,6 +203,8 @@ def config(config_values):
             api_endpoints.append('nodes')
         elif val.key == 'CollectQueues' and val.values[0]:
             api_endpoints.append('queues')
+        elif val.key == 'HTTPTimeout' and val.values[0]:
+            http_timeout = int(val.values[0])
     # Make sure all required config settings are present, and log them
     collectd.info("Using config settings:")
     for key in desired_keys:
@@ -214,7 +218,7 @@ def config(config_values):
     base_url = ("http://%s:%s/api" %
                 (plugin_config['Host'], plugin_config['Port']))
     auth = urllib2.HTTPBasicAuthHandler()
-    auth.add_password(realm=plugin_config['Realm'],
+    auth.add_password(realm=DEFAULT_REALM,
                       user=plugin_config['Username'],
                       passwd=plugin_config['Password'],
                       uri=base_url)

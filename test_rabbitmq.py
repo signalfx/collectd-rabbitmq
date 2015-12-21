@@ -47,12 +47,12 @@ mock_config.children = [
     ConfigOption('Password', ('guest',)),
     ConfigOption('Host', ('localhost',)),
     ConfigOption('Port', (15672,)),
-    ConfigOption('Realm', ('RabbitMQ Management',)),
     ConfigOption('CollectChannels', (True,)),
     ConfigOption('CollectConnections', (True,)),
     ConfigOption('CollectExchanges', (True,)),
     ConfigOption('CollectNodes', (True,)),
     ConfigOption('CollectQueues', (True,)),
+    ConfigOption('HTTPTimeout', (5,)),
 ]
 rabbitmq.config(mock_config)
 
