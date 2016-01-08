@@ -11,6 +11,7 @@ import metric_info
 
 # Global constants
 DEFAULT_API_TIMEOUT = 1  # Seconds to wait for the RabbitMQ API to respond
+DEFAULT_FIELD_LENGTH = 63  # From the collectd "Naming schema" doc
 DEFAULT_METRIC_TYPE = 'gauge'
 DEFAULT_REALM = 'RabbitMQ Management'
 DEFAULT_VHOST_NAME = 'default'
@@ -20,6 +21,7 @@ PLUGIN_NAME = 'rabbitmq'
 # These are determined by the plugin config settings and are set by config()
 api_endpoints = []
 api_urls = {}
+field_length = DEFAULT_FIELD_LENGTH
 http_timeout = DEFAULT_API_TIMEOUT
 plugin_config = {}
 
@@ -61,11 +63,17 @@ def _format_dimensions(dimensions):
     Returns:
     str: Comma-separated list of dimensions
     """
-    # Collectd limits the plugin_instance field size to 63 characters, so
-    # truncate anything longer than that (leaving room for the 2 brackets)
-    MAX_FIELD_LEN = 61
-    dim_pairs = ["%s=%s" % (k, v) for k, v in dimensions.iteritems()]
-    dim_str = ",".join(dim_pairs)[:MAX_FIELD_LEN]
+    # Collectd limits the plugin_instance field size, so truncate anything
+    # longer than that.
+    trunc_len = field_length - 2  # account for the 2 brackets at either end
+    dim_pairs = []
+    # Put the name dimension first because it is more likely to be unique
+    # and we don't want it to get truncated.
+    if 'name' in dimensions:
+        dim_pairs.append('name=%s' % dimensions['name'])
+    dim_pairs.extend("%s=%s" % (k, v) for k, v in dimensions.iteritems() if
+                     k != 'name')
+    dim_str = ",".join(dim_pairs)[:trunc_len]
     return "[%s]" % dim_str
 
 
@@ -188,26 +196,28 @@ def config(config_values):
     Args:
     config_values (collectd.Config): Object containing config values
     """
-    global plugin_config, api_endpoints, http_timeout
-    desired_keys = ('Username', 'Password', 'Host', 'Port')
+    global plugin_config, api_endpoints, http_timeout, field_length
+    required_keys = ('Username', 'Password', 'Host', 'Port')
+    opt_to_endpoint_map = {
+        'CollectChannels': 'channels',
+        'CollectConnections': 'connections',
+        'CollectExchanges': 'exchanges',
+        'CollectNodes': 'nodes',
+        'CollectQueues': 'queues',
+    }
     for val in config_values.children:
-        if val.key in desired_keys:
+        if val.key in required_keys:
             plugin_config[val.key] = val.values[0]
-        elif val.key == 'CollectChannels' and val.values[0]:
-            api_endpoints.append('channels')
-        elif val.key == 'CollectConnections' and val.values[0]:
-            api_endpoints.append('connections')
-        elif val.key == 'CollectExchanges' and val.values[0]:
-            api_endpoints.append('exchanges')
-        elif val.key == 'CollectNodes' and val.values[0]:
-            api_endpoints.append('nodes')
-        elif val.key == 'CollectQueues' and val.values[0]:
-            api_endpoints.append('queues')
+        # Optional settings below
+        elif val.key in opt_to_endpoint_map and val.values[0]:
+            api_endpoints.append(opt_to_endpoint_map[val.key])
         elif val.key == 'HTTPTimeout' and val.values[0]:
             http_timeout = int(val.values[0])
+        elif val.key == 'FieldLength' and val.values[0]:
+            field_length = int(val.values[0])
     # Make sure all required config settings are present, and log them
     collectd.info("Using config settings:")
-    for key in desired_keys:
+    for key in required_keys:
         val = plugin_config.get(key)
         if val is None:
             raise ValueError("Missing required config setting: %s" % key)
