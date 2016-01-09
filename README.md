@@ -49,6 +49,10 @@ An additional configuration option is available:
 
 * HTTPTimeout - Integer value in seconds before timing out when connecting
                 to the RabbitMQ Management API. Defaults to 1 second.
+* FieldLength - Set the number of characters used to encode dimension data.
+                This option should only ever be set if you specifically
+                compiled collectd with a non-default value for
+                DATA_MAX_NAME_LEN in plugin.h.
 
 The following is an example Collectd configuration for this plugin:
 
