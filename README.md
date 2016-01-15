@@ -48,7 +48,7 @@ of specific statistics:
 An additional configuration option is available:
 
 * HTTPTimeout - Integer value in seconds before timing out when connecting
-                to the RabbitMQ Management API. Defaults to 1 second.
+                to the RabbitMQ Management API. Defaults to 60 seconds.
 * FieldLength - Set the number of characters used to encode dimension data.
                 This option should only ever be set if you specifically
                 compiled collectd with a non-default value for
@@ -72,7 +72,7 @@ The following is an example Collectd configuration for this plugin:
         CollectExchanges true
         CollectNodes true
         CollectQueues true
-        HTTPTimeout 5
+        HTTPTimeout 60
       </Module>
     </Plugin>
 ```
