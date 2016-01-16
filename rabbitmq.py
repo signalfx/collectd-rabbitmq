@@ -10,7 +10,7 @@ import collectd
 import metric_info
 
 # Global constants
-DEFAULT_API_TIMEOUT = 1  # Seconds to wait for the RabbitMQ API to respond
+DEFAULT_API_TIMEOUT = 60  # Seconds to wait for the RabbitMQ API to respond
 DEFAULT_FIELD_LENGTH = 63  # From the collectd "Naming schema" doc
 DEFAULT_METRIC_TYPE = 'gauge'
 DEFAULT_REALM = 'RabbitMQ Management'
@@ -127,9 +127,9 @@ def extract_dimensions(stat_dict):
 
 def is_metric_allowed(name, val):
     """
-    Determines if a metric is allowed to be posted to SignalFx given its
-    name and value. This is determined by the following criteria:
-    -The metric value is a number
+    Determines if a metric is allowed to be posted to collectd and SignalFx
+    given its name and value. A metric is allowed if:
+    -The metric value is a number. A positive number if the metric is a counter
     -The metric name is in the global list of allowed metrics
 
     Args:
@@ -144,6 +144,10 @@ def is_metric_allowed(name, val):
         return False
     # Disallow metrics that aren't in the list of approved metrics
     if name not in metric_info.metric_types:
+        return False
+    # Disallow counters with negative values. These cause a TypeError or
+    # OverflowError with the collectd python plugin.
+    if metric_info.metric_types[name] == 'counter' and val < 0:
         return False
     # Allow everything else
     return True
