@@ -14,6 +14,7 @@ DEFAULT_API_TIMEOUT = 60  # Seconds to wait for the RabbitMQ API to respond
 DEFAULT_FIELD_LENGTH = 63  # From the collectd "Naming schema" doc
 DEFAULT_METRIC_TYPE = 'gauge'
 DEFAULT_REALM = 'RabbitMQ Management'
+DEFAULT_VERBOSITY = metric_info.INFO
 DEFAULT_VHOST_NAME = 'default'
 DIMENSION_NAMES = frozenset(('node', 'name', 'vhost'))
 PLUGIN_NAME = 'rabbitmq'
@@ -24,6 +25,7 @@ api_urls = {}
 field_length = DEFAULT_FIELD_LENGTH
 http_timeout = DEFAULT_API_TIMEOUT
 plugin_config = {}
+verbosity_level = DEFAULT_VERBOSITY
 
 
 def _api_call(url):
@@ -131,6 +133,7 @@ def is_metric_allowed(name, val):
     given its name and value. A metric is allowed if:
     -The metric value is a number. A positive number if the metric is a counter
     -The metric name is in the global list of allowed metrics
+    -The metric verbosity level is <= the plugin verbosity level
 
     Args:
     name (str): The name of the metric, e.g. queue.message_stats.ack
@@ -143,11 +146,14 @@ def is_metric_allowed(name, val):
     if not isinstance(val, (int, float)) or isinstance(val, bool):
         return False
     # Disallow metrics that aren't in the list of approved metrics
-    if name not in metric_info.metric_types:
+    if name not in metric_info.metric_data:
+        return False
+    # Disallow metrics that are only reported at a higher verbosity level
+    if metric_info.metric_data[name]['verbosity_level'] > verbosity_level:
         return False
     # Disallow counters with negative values. These cause a TypeError or
     # OverflowError with the collectd python plugin.
-    if metric_info.metric_types[name] == 'counter' and val < 0:
+    if metric_info.metric_data[name]['metric_type'] == 'counter' and val < 0:
         return False
     # Allow everything else
     return True
@@ -164,7 +170,9 @@ def determine_metric_type(metric_name):
     Returns:
     str: The metric type
     """
-    return metric_info.metric_types.get(metric_name, DEFAULT_METRIC_TYPE)
+    if metric_name not in metric_info.metric_data:
+        return DEFAULT_METRIC_TYPE
+    return metric_info.metric_data[metric_name]['metric_type']
 
 
 def determine_metrics(stats, base_name=''):
@@ -200,7 +208,8 @@ def config(config_values):
     Args:
     config_values (collectd.Config): Object containing config values
     """
-    global plugin_config, api_endpoints, http_timeout, field_length
+    global plugin_config, api_endpoints, http_timeout, field_length, \
+        verbosity_level
     required_keys = ('Username', 'Password', 'Host', 'Port')
     opt_to_endpoint_map = {
         'CollectChannels': 'channels',
@@ -219,6 +228,12 @@ def config(config_values):
             http_timeout = int(val.values[0])
         elif val.key == 'FieldLength' and val.values[0]:
             field_length = int(val.values[0])
+        elif val.key == 'VerbosityLevel' and val.values[0]:
+            level = val.values[0].lower()
+            if level not in metric_info.VERBOSITY_LEVELS:
+                raise ValueError("VerbosityLevel must be one of %s" %
+                                 metric_info.VERBOSITY_LEVELS.keys())
+            verbosity_level = metric_info.VERBOSITY_LEVELS[level]
     # Make sure all required config settings are present, and log them
     collectd.info("Using config settings:")
     for key in required_keys:
