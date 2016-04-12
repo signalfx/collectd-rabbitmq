@@ -91,7 +91,7 @@ metric_data = {
     },
     'channel.number': {
         'metric_type': 'gauge',
-        'verbosity_level': TRACE
+        'verbosity_level': INFO
     },
     'channel.prefetch_count': {
         'metric_type': 'gauge',
