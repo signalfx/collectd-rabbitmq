@@ -11,7 +11,7 @@ import metric_info
 
 # Global constants
 DEFAULT_API_TIMEOUT = 60  # Seconds to wait for the RabbitMQ API to respond
-DEFAULT_FIELD_LENGTH = 63  # From the collectd "Naming schema" doc
+DEFAULT_FIELD_LENGTH = 1023  # Assumes usage of the SignalFx fork of collectd
 DEFAULT_METRIC_TYPE = 'gauge'
 DEFAULT_REALM = 'RabbitMQ Management'
 DEFAULT_VERBOSITY = metric_info.INFO
