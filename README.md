@@ -27,6 +27,8 @@ gauge.queue.message_stats.deliver_get_details.rate
 
 ## Configuration
 
+SignalFx maintains a sample configuration file for this plugin here: [10-rabbitmq.conf](https://github.com/signalfx/integrations/blob/master/collectd-rabbitmq/10-rabbitmq.conf)
+
 The following mandatory configuration options describe how the plugin will
 connect to the RabbitMQ Management API:
 
@@ -60,30 +62,6 @@ value is "info". The verbosity levels are as follows:
         "info": Only the most commonly-used metrics are reported
         "debug": Additonal metrics useful for debugging are reported
         "trace": All available metrics are reported
-
-The following is an example Collectd configuration for this plugin:
-
-```
-    LoadPlugin python
-    <Plugin python>
-      ModulePath "/opt/collectd-rabbitmq"
-
-      Import rabbitmq
-      <Module rabbitmq>
-        Username "guest"
-        Password "guest"
-        Host "localhost"
-        Port "15672"
-        CollectChannels true
-        CollectConnections true
-        CollectExchanges true
-        CollectNodes true
-        CollectQueues true
-        HTTPTimeout 60
-        VerbosityLevel "info"
-      </Module>
-    </Plugin>
-```
 
 ## Known Issues
 
