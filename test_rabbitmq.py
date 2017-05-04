@@ -25,7 +25,7 @@ class MockCollectd(mock.MagicMock):
     error = log
 
 
-def mock_api_call(url):
+def mock_api_call(self, url):
     """
     Returns example statistics from the sample_responses module.
 
@@ -57,7 +57,7 @@ mock_config.children = [
 rabbitmq.config(mock_config)
 
 
-@mock.patch('rabbitmq._api_call', mock_api_call)
+@mock.patch('rabbitmq.Broker._api_call', mock_api_call)
 def test_read():
     """
     Tests the read() method of the collectd plugin. This codepath exercises

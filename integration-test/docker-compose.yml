@@ -1,0 +1,35 @@
+version: '2'
+services:
+  collectd:
+    build:
+      context: ..
+      dockerfile: integration-test/Dockerfile.collectd
+    environment:
+      SF_API_TOKEN: testing
+      SF_INGEST_HOST: fake_sfx
+    depends_on:
+      - fake_sfx
+      - rabbit34
+      - rabbit35
+      - rabbit36
+
+  rabbit34:
+    image: rabbitmq:3.4-management
+
+  rabbit35:
+    image: rabbitmq:3.5-management
+
+  rabbit36:
+    image: rabbitmq:3.6-management
+
+  fake_sfx:
+    build:
+      context: .
+      dockerfile: Dockerfile.sink
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      - collectd

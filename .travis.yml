@@ -1,3 +1,0 @@
-# command to run tests
-install: pip install --user -r requirements.txt
-script: ./verify.sh
