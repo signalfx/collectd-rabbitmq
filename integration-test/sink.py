@@ -13,7 +13,7 @@ from time import time
 def run_fake_ingest(metric_data):
     class FakeCollectdIngest(BaseHTTPRequestHandler):
         def do_POST(self):
-            body = self.rfile.read(int(self.headers.getheader('content-length')))
+            body = self.rfile.read(int(self.headers.getheader('Content-Length')))
 
             metric_data.extend(json.loads(body))
 

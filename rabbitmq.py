@@ -74,6 +74,7 @@ class Broker():
         self.http_timeout = DEFAULT_API_TIMEOUT
         self.verbosity_level = DEFAULT_VERBOSITY
         self.broker_name = ''
+        self.extra_dimensions = ''
 
     def _api_call(self, url):
         """
@@ -175,6 +176,10 @@ class Broker():
         dim_pairs.extend("%s=%s" % (k, v) for k, v in dimensions.iteritems() if
                          k != 'name')
         dim_str = ",".join(dim_pairs)[:trunc_len]
+
+        if self.extra_dimensions:
+            dim_str += ",%s" % self.extra_dimensions
+
         return "[%s]" % dim_str
 
     def determine_metrics(self, stats, base_name=''):
@@ -287,6 +292,10 @@ def config(config_values):
             b.verbosity_level = metric_info.VERBOSITY_LEVELS[level]
         elif key == 'BrokerName':
             b.broker_name = value
+        # This is supposed to be a preformatted string like
+        # "key=value,key2=value2"
+        elif key == 'Dimensions':
+            b.extra_dimensions = value
 
     collectd.info("Collecting metrics for: %s" %
                   pprint.pformat(b.api_endpoints))
