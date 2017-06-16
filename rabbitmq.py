@@ -250,7 +250,6 @@ def config(config_values):
     b = Broker()
 
     # We use only single values so this works fine
-    config_map = {}
     config_map = dict([(c.key, c.values[0]) for c in config_values.children])
 
     required_keys = ('Username', 'Password', 'Host', 'Port')
