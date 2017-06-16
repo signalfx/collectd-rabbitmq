@@ -251,8 +251,7 @@ def config(config_values):
 
     # We use only single values so this works fine
     config_map = {}
-    for child in config_values.children:
-        config_map[child.key] = child.values[0]
+    config_map = dict([(c.key, c.values[0]) for c in config_values.children])
 
     required_keys = ('Username', 'Password', 'Host', 'Port')
 
