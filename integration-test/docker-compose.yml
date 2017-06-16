@@ -13,6 +13,16 @@ services:
       - rabbit35
       - rabbit36
 
+  collectdamazon2017:
+    build:
+      context: ..
+      dockerfile: integration-test/Dockerfile.collectd.amazon2017.03
+    depends_on:
+      - fake_sfx
+      - rabbit34
+      - rabbit35
+      - rabbit36
+
   rabbit34:
     image: rabbitmq:3.4-management
 
@@ -33,3 +43,10 @@ services:
       dockerfile: Dockerfile.test
     depends_on:
       - collectd
+  
+  test26: # this is to test that python2.6 works (because collectd is linked to 2.6 on amazon)
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      - collectdamazon2017
