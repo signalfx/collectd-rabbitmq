@@ -92,7 +92,8 @@ class Broker():
         # RabbitMQ doesn't mind.  The alternative is globally modifying the
         # urllib with an opener each time before making a request.
         req.add_header("Authorization", "Basic %s" %
-                       base64.b64encode('%s:%s' % (self.username, self.password)))
+                       base64.b64encode('%s:%s' % (self.username,
+                                                   self.password)))
 
         try:
             resp = urllib2.urlopen(req, timeout=self.http_timeout)
@@ -131,7 +132,7 @@ class Broker():
         """
         for metrics, dimensions in self.get_metrics_and_dimensions():
             for metric, value in metrics.iteritems():
-                datapoint = collectd.Values()
+                datapoint = collectd.Values(meta={'0': True})
                 datapoint.type = determine_metric_type(metric)
                 datapoint.type_instance = metric
                 datapoint.plugin = PLUGIN_NAME
@@ -167,7 +168,8 @@ class Broker():
         """
         # Collectd limits the plugin_instance field size, so truncate anything
         # longer than that.
-        trunc_len = self.field_length - 2  # account for the 2 brackets at either end
+        # account for the 2 brackets at either end
+        trunc_len = self.field_length - 2
         dim_pairs = []
         # Put the name dimension first because it is more likely to be unique
         # and we don't want it to get truncated.
@@ -211,7 +213,8 @@ class Broker():
         """
         Determines if a metric is allowed to be posted to collectd and SignalFx
         given its name and value. A metric is allowed if:
-        -The metric value is a number. A positive number if the metric is a counter
+        -The metric value is a number.
+            A positive number if the metric is a counter
         -The metric name is in the global list of allowed metrics
         -The metric verbosity level is <= the plugin verbosity level
 
@@ -229,11 +232,13 @@ class Broker():
         if name not in metric_info.metric_data:
             return False
         # Disallow metrics that are only reported at a higher verbosity level
-        if metric_info.metric_data[name]['verbosity_level'] > self.verbosity_level:
+        if metric_info.metric_data[name]['verbosity_level'] > \
+           self.verbosity_level:
             return False
         # Disallow counters with negative values. These cause a TypeError or
         # OverflowError with the collectd python plugin.
-        if metric_info.metric_data[name]['metric_type'] == 'counter' and val < 0:
+        if metric_info.metric_data[name]['metric_type'] == 'counter' \
+           and val < 0:
             return False
         # Allow everything else
         return True
