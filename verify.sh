@@ -1,5 +1,5 @@
 #!/bin/bash
-flake8 rabbitmq.py test_rabbitmq.py metric_info.py
+flake8 rabbitmq.py metric_info.py
 if [ "$?" -ne 0 ]; then
     exit 1;
 fi
