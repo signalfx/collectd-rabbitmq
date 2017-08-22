@@ -131,7 +131,7 @@ class Broker():
         """
         for metrics, dimensions in self.get_metrics_and_dimensions():
             for metric, value in metrics.iteritems():
-                datapoint = collectd.Values()
+                datapoint = collectd.Values(meta={'0': True})
                 datapoint.type = determine_metric_type(metric)
                 datapoint.type_instance = metric
                 datapoint.plugin = PLUGIN_NAME
