@@ -3,7 +3,7 @@
 ## Introduction
 
 collectd-rabbitmq is a [collectd](http://www.collectd.org/) plugin that
-collects statistics from RabbitMQ. The plugin uses the [RabbitMQ Management HTTP API](http://hg.rabbitmq.com/rabbitmq-management/raw-file/rabbitmq_v3_3_4/priv/www/api/index.html)
+collects statistics from RabbitMQ. The plugin uses the [RabbitMQ Management Plugin](https://www.rabbitmq.com/management.html)
 to poll for statistics on a RabbitMQ server, then reports them to collectd.
 
 When collectd is configured to publish metrics to SignalFx, metrics from this
