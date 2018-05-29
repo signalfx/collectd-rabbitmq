@@ -1,35 +1,22 @@
 version: '2'
 jobs:
   build:
-    docker:
-      - image: ubuntu:yakkety
+    machine:
+      image: circleci/classic:201711-01
     working_directory: ~/code
     steps:
-      - setup_remote_docker
-      - run:
-          name: Install Docker client
-          command: |
-            set -x
-            VER="17.03.0-ce"
-            apt-get update -q
-            apt-get install -yq curl python-pip
-            curl -L -o /tmp/docker-$VER.tgz https://get.docker.com/builds/Linux/x86_64/docker-$VER.tgz
-            tar -xz -C /tmp -f /tmp/docker-$VER.tgz
-            mv /tmp/docker/* /usr/bin
-      - run:
-          name: Install docker-compose
-          command: |
-            set -x
-            curl -L https://github.com/docker/compose/releases/download/1.11.2/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
-            chmod +x /usr/local/bin/docker-compose
       - checkout
+      - run:
+          name: Install dependencies
+          working_directory: ~/code
+          command: |
+            sudo apt update && sudo apt install -yq python3-pip
+            pip install -r test_requirements.txt
       - run:
           name: Run basic tests
           working_directory: ~/code
-          command: |
-            pip install -r requirements.txt
-            bash verify.sh
-      - run: 
+          command: bash verify.sh
+      - run:
           name: Run integration tests
-          working_directory: ~/code/integration-test
-          command: bash run.sh
+          working_directory: ~/code
+          command: pytest -n4 integration_tests
