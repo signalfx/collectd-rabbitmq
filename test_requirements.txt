@@ -1,0 +1,6 @@
+flake8==3.5.0
+pytest==3.6.0
+pytest-xdist==1.22.2
+mock==2.0.0
+
+https://github.com/signalfx/collectd-common/archive/testing-v0.0.2.zip#subdirectory=testing

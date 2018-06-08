@@ -4,8 +4,10 @@
 import base64
 import json
 import pprint
-import urllib2
 
+from six.moves.urllib.request import Request, urlopen
+from six.moves.urllib.error import HTTPError, URLError
+import six
 import collectd
 
 import metric_info
@@ -86,7 +88,7 @@ class Broker():
         Returns:
         list: The JSON response
         """
-        req = urllib2.Request(url)
+        req = Request(url)
 
         # This is technically non-standard to send auth header upfront, but
         # RabbitMQ doesn't mind.  The alternative is globally modifying the
@@ -96,13 +98,13 @@ class Broker():
                                                    self.password)))
 
         try:
-            resp = urllib2.urlopen(req, timeout=self.http_timeout)
-        except (urllib2.HTTPError, urllib2.URLError) as e:
+            resp = urlopen(req, timeout=self.http_timeout)
+        except (HTTPError, URLError) as e:
             collectd.error("Error making API call (%s) %s" % (e, url))
             return []
         try:
             return json.load(resp)
-        except ValueError, e:
+        except ValueError as e:
             collectd.error("Error parsing JSON for API call (%s) %s" %
                            (e, url))
             return []
@@ -131,7 +133,7 @@ class Broker():
         dimensions (dict): Mapping of {dimension_name: value, ...}
         """
         for metrics, dimensions in self.get_metrics_and_dimensions():
-            for metric, value in metrics.iteritems():
+            for metric, value in six.iteritems(metrics):
                 datapoint = collectd.Values(meta={'0': True})
                 datapoint.type = determine_metric_type(metric)
                 datapoint.type_instance = metric
@@ -175,8 +177,9 @@ class Broker():
         # and we don't want it to get truncated.
         if 'name' in dimensions:
             dim_pairs.append('name=%s' % dimensions['name'])
-        dim_pairs.extend("%s=%s" % (k, v) for k, v in dimensions.iteritems() if
-                         k != 'name')
+        dim_pairs.extend("%s=%s" % (k, v)
+                         for k, v in six.iteritems(dimensions)
+                         if k != 'name')
         dim_str = ",".join(dim_pairs)[:trunc_len]
 
         if self.extra_dimensions:
@@ -197,7 +200,7 @@ class Broker():
         stack = [(base_name, stats)]
         while stack:
             metric_base, stat_dict = stack.pop()
-            for stat_name, stat_val in stat_dict.iteritems():
+            for stat_name, stat_val in six.iteritems(stat_dict):
                 if base_name:
                     metric_name = "%s.%s" % (metric_base, stat_name)
                 else:
