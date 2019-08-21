@@ -69,6 +69,7 @@ class Broker():
         self.password = ''
         self.host = ''
         self.port = ''
+        self.is_https = False
         self.api_endpoints = []
         self.field_length = DEFAULT_FIELD_LENGTH
         self.http_timeout = DEFAULT_API_TIMEOUT
@@ -109,7 +110,8 @@ class Broker():
 
     def get_metrics_and_dimensions(self):
         metrics = {}
-        base_url = ("http://%s:%s/api" % (self.host, self.port))
+        http_protocol = "https" if self.is_https else "http"
+        base_url = ("%s://%s:%s/api" % (http_protocol, self.host, self.port))
 
         for endpoint in self.api_endpoints:
             resp_list = self._api_call("%s/%s" % (base_url, endpoint))
@@ -285,6 +287,8 @@ def config(config_values):
         # Optional settings below
         elif key in opt_to_endpoint_map and value:
             b.api_endpoints.append(opt_to_endpoint_map[key])
+        elif key == 'IsHttps' and value:
+            b.is_https = True
         elif key == 'HTTPTimeout' and value:
             b.http_timeout = int(value)
         elif key == 'FieldLength' and value:

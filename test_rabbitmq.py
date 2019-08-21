@@ -52,6 +52,7 @@ mock_config.children = [
     ConfigOption('CollectExchanges', (True,)),
     ConfigOption('CollectNodes', (True,)),
     ConfigOption('CollectQueues', (True,)),
+    ConfigOption('IsHttps', (False,)),
     ConfigOption('HTTPTimeout', (5,)),
 ]
 rabbitmq.config(mock_config)
