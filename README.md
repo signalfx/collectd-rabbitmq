@@ -49,6 +49,7 @@ of specific statistics:
 
 An additional configuration option is available:
 
+* IsHttps - Boolean for if host is https protocol. Default is False. 
 * HTTPTimeout - Integer value in seconds before timing out when connecting
 to the RabbitMQ Management API. Defaults to 60 seconds.
 * FieldLength - Set the number of characters used to encode dimension data.
