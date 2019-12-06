@@ -17,7 +17,7 @@ class MockCollectd(mock.MagicMock):
     """
     @staticmethod
     def log(log_str):
-        print log_str
+        print(log_str)
 
     debug = log
     info = log
