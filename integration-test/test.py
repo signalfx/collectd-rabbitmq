@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import httplib
+import http.client
 import json
 from time import time, sleep
 
@@ -21,7 +21,7 @@ TIMEOUT_SECS = 60
 
 def get_metric_data():
     # Use httplib instead of requests so we don't have to install stuff with pip
-    conn = httplib.HTTPConnection("fake_sfx", 8080)
+    conn = http.client.HTTPConnection("fake_sfx", 8080)
     conn.request("GET", "/")
     resp = conn.getresponse()
     conn.close()
@@ -31,10 +31,10 @@ def get_metric_data():
 def wait_for_metrics_from_each_broker():
     start = time()
     for broker in BROKER_HOSTS:
-        print 'Waiting for metrics from broker %s...' % (broker,)
+        print('Waiting for metrics from broker %s...' % (broker,))
         eventually_true(lambda: any([broker in m.get('plugin_instance') for m in get_metric_data()]),
                         TIMEOUT_SECS - (time() - start))
-        print 'Found!'
+        print('Found!')
 
 
 def eventually_true(f, timeout_secs):

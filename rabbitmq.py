@@ -4,21 +4,21 @@
 import base64
 import json
 import pprint
-import urllib2
+
+from six.moves import urllib
 
 import collectd
-
 import metric_info
 
 # Global constants
 DEFAULT_API_TIMEOUT = 60  # Seconds to wait for the RabbitMQ API to respond
 DEFAULT_FIELD_LENGTH = 1023  # Assumes usage of the SignalFx fork of collectd
-DEFAULT_METRIC_TYPE = 'gauge'
-DEFAULT_REALM = 'RabbitMQ Management'
+DEFAULT_METRIC_TYPE = "gauge"
+DEFAULT_REALM = "RabbitMQ Management"
 DEFAULT_VERBOSITY = metric_info.INFO
-DEFAULT_VHOST_NAME = 'default'
-DIMENSION_NAMES = frozenset(('node', 'name', 'vhost'))
-PLUGIN_NAME = 'rabbitmq'
+DEFAULT_VHOST_NAME = "default"
+DIMENSION_NAMES = frozenset(("node", "name", "vhost"))
+PLUGIN_NAME = "rabbitmq"
 
 # Global list of brokers configured.  Each module gets added as a separate
 # broker.
@@ -42,8 +42,8 @@ def extract_dimensions(stat_dict):
         if dimension in stat_dict:
             dimensions[dimension] = stat_dict.pop(dimension)
     # Special case to rename the default vhost to something more legible
-    if dimensions.get('vhost') == '/':
-        dimensions['vhost'] = DEFAULT_VHOST_NAME
+    if dimensions.get("vhost") == "/":
+        dimensions["vhost"] = DEFAULT_VHOST_NAME
     return dimensions
 
 
@@ -60,21 +60,21 @@ def determine_metric_type(metric_name):
     """
     if metric_name not in metric_info.metric_data:
         return DEFAULT_METRIC_TYPE
-    return metric_info.metric_data[metric_name]['metric_type']
+    return metric_info.metric_data[metric_name]["metric_type"]
 
 
-class Broker():
+class Broker:
     def __init__(self):
-        self.username = ''
-        self.password = ''
-        self.host = ''
-        self.port = ''
+        self.username = ""
+        self.password = ""
+        self.host = ""
+        self.port = ""
         self.api_endpoints = []
         self.field_length = DEFAULT_FIELD_LENGTH
         self.http_timeout = DEFAULT_API_TIMEOUT
         self.verbosity_level = DEFAULT_VERBOSITY
-        self.broker_name = ''
-        self.extra_dimensions = ''
+        self.broker_name = ""
+        self.extra_dimensions = ""
 
     def _api_call(self, url):
         """
@@ -86,35 +86,35 @@ class Broker():
         Returns:
         list: The JSON response
         """
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
 
         # This is technically non-standard to send auth header upfront, but
         # RabbitMQ doesn't mind.  The alternative is globally modifying the
         # urllib with an opener each time before making a request.
-        req.add_header("Authorization", "Basic %s" %
-                       base64.b64encode('%s:%s' % (self.username,
-                                                   self.password)))
+        req.add_header(
+            "Authorization",
+            "Basic " + base64.b64encode(("%s:%s" % (self.username, self.password)).encode("utf-8")).decode("utf-8"),
+        )
 
         try:
-            resp = urllib2.urlopen(req, timeout=self.http_timeout)
-        except (urllib2.HTTPError, urllib2.URLError) as e:
+            resp = urllib.request.urlopen(req, timeout=self.http_timeout)
+        except (urllib.error.HTTPError, urllib.error.URLError) as e:
             collectd.error("Error making API call (%s) %s" % (e, url))
             return []
         try:
             return json.load(resp)
-        except ValueError, e:
-            collectd.error("Error parsing JSON for API call (%s) %s" %
-                           (e, url))
+        except ValueError as e:
+            collectd.error("Error parsing JSON for API call (%s) %s" % (e, url))
             return []
 
     def get_metrics_and_dimensions(self):
         metrics = {}
-        base_url = ("http://%s:%s/api" % (self.host, self.port))
+        base_url = "http://%s:%s/api" % (self.host, self.port)
 
         for endpoint in self.api_endpoints:
             resp_list = self._api_call("%s/%s" % (base_url, endpoint))
 
-            base_name = endpoint.rstrip('s')  # Report dimensions as singular
+            base_name = endpoint.rstrip("s")  # Report dimensions as singular
             for resp in resp_list:
                 dimensions = extract_dimensions(resp)
                 collectd.debug("Using dimensions:")
@@ -131,8 +131,8 @@ class Broker():
         dimensions (dict): Mapping of {dimension_name: value, ...}
         """
         for metrics, dimensions in self.get_metrics_and_dimensions():
-            for metric, value in metrics.iteritems():
-                datapoint = collectd.Values(meta={'0': True})
+            for metric, value in metrics.items():
+                datapoint = collectd.Values(meta={"0": True})
                 datapoint.type = determine_metric_type(metric)
                 datapoint.type_instance = metric
                 datapoint.plugin = PLUGIN_NAME
@@ -141,11 +141,11 @@ class Broker():
                 datapoint.values = (value,)
 
                 pprint_dict = {
-                    'plugin': datapoint.plugin,
-                    'plugin_instance': datapoint.plugin_instance,
-                    'type': datapoint.type,
-                    'type_instance': datapoint.type_instance,
-                    'values': datapoint.values
+                    "plugin": datapoint.plugin,
+                    "plugin_instance": datapoint.plugin_instance,
+                    "type": datapoint.type,
+                    "type_instance": datapoint.type_instance,
+                    "values": datapoint.values,
                 }
                 collectd.debug(pprint.pformat(pprint_dict))
 
@@ -173,10 +173,9 @@ class Broker():
         dim_pairs = []
         # Put the name dimension first because it is more likely to be unique
         # and we don't want it to get truncated.
-        if 'name' in dimensions:
-            dim_pairs.append('name=%s' % dimensions['name'])
-        dim_pairs.extend("%s=%s" % (k, v) for k, v in dimensions.iteritems() if
-                         k != 'name')
+        if "name" in dimensions:
+            dim_pairs.append("name=%s" % dimensions["name"])
+        dim_pairs.extend("%s=%s" % (k, v) for k, v in dimensions.items() if k != "name")
         dim_str = ",".join(dim_pairs)[:trunc_len]
 
         if self.extra_dimensions:
@@ -184,7 +183,7 @@ class Broker():
 
         return "[%s]" % dim_str
 
-    def determine_metrics(self, stats, base_name=''):
+    def determine_metrics(self, stats, base_name=""):
         """
         Iterate through a dictionary of RabbitMQ stats and determine
         metric names, values, and dimensions.
@@ -197,7 +196,7 @@ class Broker():
         stack = [(base_name, stats)]
         while stack:
             metric_base, stat_dict = stack.pop()
-            for stat_name, stat_val in stat_dict.iteritems():
+            for stat_name, stat_val in stat_dict.items():
                 if base_name:
                     metric_name = "%s.%s" % (metric_base, stat_name)
                 else:
@@ -232,13 +231,11 @@ class Broker():
         if name not in metric_info.metric_data:
             return False
         # Disallow metrics that are only reported at a higher verbosity level
-        if metric_info.metric_data[name]['verbosity_level'] > \
-           self.verbosity_level:
+        if metric_info.metric_data[name]["verbosity_level"] > self.verbosity_level:
             return False
         # Disallow counters with negative values. These cause a TypeError or
         # OverflowError with the collectd python plugin.
-        if metric_info.metric_data[name]['metric_type'] == 'counter' \
-           and val < 0:
+        if metric_info.metric_data[name]["metric_type"] == "counter" and val < 0:
             return False
         # Allow everything else
         return True
@@ -257,7 +254,7 @@ def config(config_values):
     # We use only single values so this works fine
     config_map = dict([(c.key, c.values[0]) for c in config_values.children])
 
-    required_keys = ('Username', 'Password', 'Host', 'Port')
+    required_keys = ("Username", "Password", "Host", "Port")
 
     # Make sure all required config settings are present, and log them
     collectd.info("Using config settings:")
@@ -266,51 +263,48 @@ def config(config_values):
             raise ValueError("Missing required config setting: %s" % key)
 
     opt_to_endpoint_map = {
-        'CollectChannels': 'channels',
-        'CollectConnections': 'connections',
-        'CollectExchanges': 'exchanges',
-        'CollectNodes': 'nodes',
-        'CollectQueues': 'queues',
+        "CollectChannels": "channels",
+        "CollectConnections": "connections",
+        "CollectExchanges": "exchanges",
+        "CollectNodes": "nodes",
+        "CollectQueues": "queues",
     }
 
-    for key, value in config_map.items():
-        if key == 'Username':
+    for key, value in list(config_map.items()):
+        if key == "Username":
             b.username = value
-        elif key == 'Password':
+        elif key == "Password":
             b.password = value
-        elif key == 'Host':
+        elif key == "Host":
             b.host = value
-        elif key == 'Port':
+        elif key == "Port":
             b.port = value
         # Optional settings below
         elif key in opt_to_endpoint_map and value:
             b.api_endpoints.append(opt_to_endpoint_map[key])
-        elif key == 'HTTPTimeout' and value:
+        elif key == "HTTPTimeout" and value:
             b.http_timeout = int(value)
-        elif key == 'FieldLength' and value:
+        elif key == "FieldLength" and value:
             b.field_length = int(value)
-        elif key == 'VerbosityLevel' and value:
+        elif key == "VerbosityLevel" and value:
             level = value.lower()
             if level not in metric_info.VERBOSITY_LEVELS:
-                raise ValueError("VerbosityLevel must be one of %s" %
-                                 metric_info.VERBOSITY_LEVELS.keys())
+                raise ValueError("VerbosityLevel must be one of %s" % list(metric_info.VERBOSITY_LEVELS.keys()))
             b.verbosity_level = metric_info.VERBOSITY_LEVELS[level]
-        elif key == 'BrokerName':
+        elif key == "BrokerName":
             b.broker_name = value
         # This is supposed to be a preformatted string like
         # "key=value,key2=value2"
-        elif key == 'Dimensions':
+        elif key == "Dimensions":
             b.extra_dimensions = value
 
-    collectd.info("Collecting metrics for: %s" %
-                  pprint.pformat(b.api_endpoints))
+    collectd.info("Collecting metrics for: %s" % pprint.pformat(b.api_endpoints))
 
     BROKERS.append(b)
 
     if len(BROKERS) > 1:
         if any([not br.broker_name for br in BROKERS]):
-            raise ValueError("BrokerName must be specified if configuring "
-                             "multiple plugin instances!")
+            raise ValueError("BrokerName must be specified if configuring " "multiple plugin instances!")
 
 
 def init():
