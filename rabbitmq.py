@@ -4,10 +4,11 @@
 import base64
 import json
 import pprint
-
-from six.moves import urllib
+import ssl
 
 import collectd
+from six.moves import urllib
+
 import metric_info
 
 # Global constants
@@ -75,6 +76,12 @@ class Broker:
         self.verbosity_level = DEFAULT_VERBOSITY
         self.broker_name = ""
         self.extra_dimensions = ""
+        self.ssl_key_file = ""
+        self.ssl_key_passphrase = ""
+        self.ssl_cert_file = ""
+        self.ssl_ca_cert_file = ""
+        self.ssl_enabled = False
+        self.ssl_verify = False
 
     def _api_call(self, url):
         """
@@ -96,8 +103,18 @@ class Broker:
             "Basic " + base64.b64encode(("%s:%s" % (self.username, self.password)).encode("utf-8")).decode("utf-8"),
         )
 
+        context = None
+
+        if self.ssl_enabled:
+            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=self.ssl_ca_cert_file)
+            if not self.ssl_verify:
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
+            context.load_cert_chain(certfile=self.ssl_cert_file, keyfile=self.ssl_key_file,
+                                    password=self.ssl_key_passphrase)
+
         try:
-            resp = urllib.request.urlopen(req, timeout=self.http_timeout)
+            resp = urllib.request.urlopen(req, timeout=self.http_timeout, context=context)
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
             collectd.error("Error making API call (%s) %s" % (e, url))
             return []
@@ -109,7 +126,7 @@ class Broker:
 
     def get_metrics_and_dimensions(self):
         metrics = {}
-        base_url = "http://%s:%s/api" % (self.host, self.port)
+        base_url = "%s://%s:%s/api" % ("https" if self.ssl_enabled else "http", self.host, self.port)
 
         for endpoint in self.api_endpoints:
             resp_list = self._api_call("%s/%s" % (base_url, endpoint))
@@ -297,8 +314,20 @@ def config(config_values):
         # "key=value,key2=value2"
         elif key == "Dimensions":
             b.extra_dimensions = value
+        elif key == "SSLKeyFile":
+            b.ssl_key_file = value
+        elif key == "SSLKeyPassphrase":
+            b.ssl_key_passphrase = value
+        elif key == "SSLCertFile":
+            b.ssl_cert_file = value
+        elif key == "SSLCACertFile":
+            b.ssl_ca_cert_file = value
+        elif key == "SSLEnabled":
+            b.ssl_enabled = value
+        elif key == "SSLVerify":
+            b.ssl_verify = value
 
-    collectd.info("Collecting metrics for: %s" % pprint.pformat(b.api_endpoints))
+        collectd.info("Collecting metrics for: %s" % pprint.pformat(b.api_endpoints))
 
     BROKERS.append(b)
 
