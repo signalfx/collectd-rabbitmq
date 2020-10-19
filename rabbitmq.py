@@ -106,12 +106,13 @@ class Broker:
         context = None
 
         if self.ssl_enabled:
-            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=self.ssl_ca_cert_file)
+            context = ssl.create_default_context(cafile=self.ssl_ca_cert_file)
             if not self.ssl_verify:
                 context.check_hostname = False
                 context.verify_mode = ssl.CERT_NONE
-            context.load_cert_chain(certfile=self.ssl_cert_file, keyfile=self.ssl_key_file,
-                                    password=self.ssl_key_passphrase)
+            if self.ssl_cert_file:
+                context.load_cert_chain(certfile=self.ssl_cert_file, keyfile=self.ssl_key_file,
+                                        password=self.ssl_key_passphrase)
 
         try:
             resp = urllib.request.urlopen(req, timeout=self.http_timeout, context=context)
