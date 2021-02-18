@@ -27,7 +27,7 @@ gauge.queue.message_stats.deliver_get_details.rate
 
 ## Configuration
 
-SignalFx maintains a sample configuration file for this plugin here: [10-rabbitmq.conf](https://github.com/signalfx/integrations/blob/master/collectd-rabbitmq/10-rabbitmq.conf)
+SignalFx maintains a sample configuration file for this plugin here: [10-rabbitmq.conf](https://github.com/signalfx/integrations/blob/master/rabbitmq/10-rabbitmq.conf)
 
 The following mandatory configuration options describe how the plugin will
 connect to the RabbitMQ Management API:
