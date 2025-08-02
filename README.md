@@ -1,3 +1,7 @@
+> # :warning: End of Support (EoS) Notice
+> 
+> This plugin is deprecated and no longer maintained.
+
 # Collectd RabbitMQ Plugin
 
 ## Introduction
